@@ -15,7 +15,7 @@ This application utilizes a decoupled React/FastAPI stack. It features a 3-Tier 
 
 ### Step 2: Data Models & State Schemas (The Blackboard & The Vault)
 * **Goal:** Write Pydantic schemas for the runtime "Blackboard" and SQLAlchemy models for the "Component Vault" (including a `source_type` enum: `API_CACHE`, `DEEP_SCRAPE`, `USER_UPLOAD`).
-* **Rule (Data Normalization):** All Pydantic schemas MUST utilize V2 `@field_validator` decorators to intercept and force incoming data into SI standard units (Torque = Nm, Dimensions = mm, Potential = V).
+* **Rule (Data Normalization):** All Pydantic schemas MUST utilize V2 `@field_validator` decorators to intercept and force incoming data into SI standard units (Torque = Nm, Dimensions = mm, Potential = V). The ComponentVault SQLAlchemy model must use a hybrid structure. It requires strict columns for identifiers (id, part_number, name, source_type) and a JSON column named specs to store the highly variable, normalized SI metric data.
 * **Why:** Forcing strict schema compliance and unit normalization prevents hallucinated or misaligned data from poisoning the local caching database.
 * **Testing Protocol (QA Gate 2):**
     * **Black Box:** Instantiate the Pydantic Blackboard with mock data (pass) and invalid data (throw strict `ValidationError`). Write and retrieve a mock component from the SQLite Vault.
