@@ -48,7 +48,8 @@ def normalize_unit(val: float, unit: str):
     elif unit_lower in ['v', 'volt', 'volts']:
         return val, 'V'
         
-    raise ValueError(f"Unrecognized or unconvertible unit: {unit}")
+    # If unrecognized, return as is (flexible schema)
+    return val, unit
 
 class Constraint(BaseModel):
     name: str
@@ -93,9 +94,14 @@ class ComponentSchema(BaseModel):
         if isinstance(v, dict):
             for key, attr in v.items():
                 if isinstance(attr, dict) and 'value' in attr and 'unit' in attr:
-                    new_val, new_unit = normalize_unit(float(attr['value']), str(attr['unit']))
-                    attr['value'] = new_val
-                    attr['unit'] = new_unit
+                    try:
+                        # Only normalize if it's a number
+                        numeric_val = float(attr['value'])
+                        new_val, new_unit = normalize_unit(numeric_val, str(attr['unit']))
+                        attr['value'] = new_val
+                        attr['unit'] = new_unit
+                    except (ValueError, TypeError):
+                        pass # Ignore if it's a string or dimensionless value
         return v
 
 class ExecutionState(BaseModel):
