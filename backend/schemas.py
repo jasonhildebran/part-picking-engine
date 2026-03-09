@@ -111,3 +111,5 @@ class ExecutionState(BaseModel):
     candidates_evaluated: List[ComponentSchema] = Field(default_factory=list)
     final_selection: Optional[ComponentSchema] = None
     status: str = "PENDING"
+    optimized_query: str = ""
+    agent_traces: List[Dict[str, Any]] = Field(default_factory=list)

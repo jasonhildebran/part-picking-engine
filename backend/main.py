@@ -8,6 +8,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from graph import app as langgraph_app
 from schemas import ExecutionState, JobMetadata, SearchParameters
+from database import engine
+import models
+
+models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Part Picker API")
 
@@ -45,18 +49,23 @@ async def streaming_generator(prompt: str):
                 state_dict = {}
                 if hasattr(state_update, "get") and "candidates_evaluated" in state_update:
                     state_dict["candidates_evaluated"] = [c.model_dump() for c in state_update["candidates_evaluated"]]
+                if hasattr(state_update, "get") and "final_selection" in state_update:
+                    state_dict["final_selection"] = state_update["final_selection"].model_dump()
+                if hasattr(state_update, "get") and "agent_traces" in state_update:
+                    state_dict["agent_traces"] = state_update["agent_traces"]
                     
                 event = {
                     "node": node_name, 
                     "status": "complete", 
                     "message": status_msg,
-                    "state": state_dict
+                    "state": state_dict,
+                    "query": prompt
                 }
                 yield f"data: {json.dumps(event)}\n\n"
     except Exception as e:
         yield f"data: {json.dumps({'node': 'Error', 'status': 'failed', 'message': str(e)})}\n\n"
 
-@app.post("/start_job")
+@app.post("/api/v1/start_job")
 async def start_job(request: Request):
     try:
         data = await request.json()
@@ -66,7 +75,7 @@ async def start_job(request: Request):
         
     return StreamingResponse(streaming_generator(prompt), media_type="text/event-stream")
 
-@app.post("/ingest_pdf")
+@app.post("/api/v1/ingest_pdf")
 async def ingest_pdf(file: UploadFile = File(...)):
     if file.content_type != "application/pdf":
         raise HTTPException(status_code=400, detail="Invalid file type. Only PDFs are allowed.")

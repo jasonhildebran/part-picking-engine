@@ -12,6 +12,7 @@ class ComponentVault(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     part_number = Column(String, unique=True, index=True, nullable=False)
+    search_term = Column(String, nullable=True)
     name = Column(String, nullable=True)
     source_type = Column(SQLAlchemyEnum(SourceType), nullable=False)
     specs = Column(JSON, nullable=True)
